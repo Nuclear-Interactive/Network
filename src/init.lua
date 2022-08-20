@@ -231,6 +231,10 @@ function Network.new(name: string, parent: Instance?): Network
     if RunService:IsServer() then
         self.__vault = createNetworkVault(name, parent)
     elseif RunService:IsClient() then
+        if not self.__vault then
+            self:Destroy()
+            error(string.format("Network %s does not exist on the Server.", name))
+        end
         self.__vault.Signals.ChildAdded:Connect(function(remote)
             createSignal(self, remote.Name, remote)
         end)

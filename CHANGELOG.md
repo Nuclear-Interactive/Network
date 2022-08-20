@@ -8,3 +8,6 @@
 
 ## [1.0.2]
 - Fixed Package
+
+## [1.0.3]
+- Attempting to create a Network on the Client that does not exist on the server will now error.
