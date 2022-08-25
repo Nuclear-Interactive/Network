@@ -1,18 +1,15 @@
 {
-    "name": "NetworkTestPlace",
-    "tree": {
-      "$className": "DataModel",
-      "ReplicatedFirst": {
-        "$className": "ReplicatedFirst",
-        "Packages": {
-          "$path": "Packages/"
-        }
-      },
-      "ReplicatedStorage": {
-        "$className": "ReplicatedStorage",
+  "name": "NetworkPackage",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Packages": {
+        "$path": "Packages/",
         "Network": {
           "$path": "src/"
         }
       }
     }
   }
+}

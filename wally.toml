@@ -10,3 +10,4 @@ include = ["src", "src/*", "default.project.json", "wally.toml"]
 [dependencies]
 Promise = "ruizukun-dev/promise@4.0.3"
 FastSignal = "lucasmzreal/fastsignal@10.2.1"
+BasicState = "csqrl/basicstate@0.2.6"
