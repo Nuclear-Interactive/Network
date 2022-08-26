@@ -20,15 +20,11 @@ export type NetworkSignal = {
     __remote: RemoteEvent;
     __signal: FastSignal;
 
-    Connect: (self: NetworkSignal, handler: (player: Player, ...any) -> ()) -> FastConnection;
-    Once: (self: NetworkSignal, handler: (player: Player, ...any) -> ()) -> ();
+    Connect: (self: NetworkSignal, handler: (...any) -> ()) -> FastConnection;
+    Once: (self: NetworkSignal, handler: (...any) -> ()) -> ();
     Wait: (self: NetworkSignal) -> ...any;
 
-	FireClient: (self: NetworkSignal, client: Player, any...) -> ();
-	--FireClients: (self: NetworkSignal, clients: {Player}, any...) -> ();
-	FireAllClients: (self: NetworkSignal, any...) -> ();
-	--FireAllExcept: (self: NetworkSignal, excludedClients: {Player}, any...) -> ();
-	--FireAllFilter: <A>(self: NetworkSignal, predicate: (client: Player, A...) -> (boolean), A...) -> ();
+    FireServer: (self: NetworkSignal, ...any) -> ();
 
     Destroy: (self: NetworkSignal) -> ();
 }
@@ -37,26 +33,22 @@ local NetworkSignal: NetworkSignal = {}
 NetworkSignal.__index = NetworkSignal
 
 function NetworkSignal:Connect(handler: (...any) -> (), direct: boolean?): FastConnection
-    local signalToConnectTo = direct and self.__remote.OnServerEvent or self.__signal
+    local signalToConnectTo = direct and self.__remote.OnClientEvent or self.__signal
     return signalToConnectTo:Connect(handler)
 end
 
 function NetworkSignal:Once(handler: (...any) -> (), direct: boolean?)
-    local signalToConnectTo = direct and self.__remote.OnServerEvent or self.__signal
+    local signalToConnectTo = direct and self.__remote.OnClientEvent or self.__signal
     return signalToConnectTo:Once(handler)
 end
 
 function NetworkSignal:Wait(direct: boolean?): ...any
-    local signalToConnectTo = direct and self.__remote.OnServerEvent or self.__signal
+    local signalToConnectTo = direct and self.__remote.OnClientEvent or self.__signal
     return signalToConnectTo:Wait()
 end
 
-function NetworkSignal:FireClient(client: Player, ...: any)
-    self.__remote:FireClient(client, ...)
-end
-
-function NetworkSignal:FireAllClients(...: any)
-    self.__remote:FireAllClients(...)
+function NetworkSignal:FireServer(...: any)
+    self.__remote:FireServer(...)
 end
 
 function NetworkSignal:Destroy()
@@ -72,8 +64,8 @@ function NetworkSignal.new(name: string, remote: RemoteEvent): NetworkSignal
     }, NetworkSignal)
 
     onSignalFirstConnected(self.__signal, function()
-        self.__remote.OnServerEvent:Connect(function(player, ...)
-            self.__signal:Fire(player, ...)
+        self.__remote.OnClientEvent:Connect(function(...)
+            self.__signal:Fire(...)
         end)
     end)
 

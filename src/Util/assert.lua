@@ -3,7 +3,7 @@ local function assert<A>(value: A, errorMessage: string, ...: string): A?
 	if errorMessage then
 		return error(string.format(errorMessage, ...))
 	else
-		return error("assertion failed!", 2)
+		return error("assertion failed!")
 	end
 end
 

@@ -40,8 +40,8 @@ export type Network = {
     Name: string;
 
     SignalAdded: FastSignal;
-    FunctionAdded: FastSignal;
-    StateAdded: FastSignal;
+    --FunctionAdded: FastSignal;
+    --StateAdded: FastSignal;
 
     __vault: NetworkVault;
     __registry: {
@@ -51,15 +51,15 @@ export type Network = {
     };
 
     CreateSignal: (self: Network, name: string) -> NetworkSignal;
-    CreateFunction: (self: Network, name: string) -> NetworkFunction;
-    CreateState: (self: Network, name: string, initialState: {any}) -> NetworkState;
+    --CreateFunction: (self: Network, name: string) -> NetworkFunction;
+    --CreateState: (self: Network, name: string, initialState: {any}) -> NetworkState;
 
     GetSignal: (self: Network, name: string) -> NetworkSignal?;
-    GetFunction: (self: Network, name: string) -> NetworkFunction?;
-    GetState: (self: Network, name: string) -> NetworkState?;
+    --GetFunction: (self: Network, name: string) -> NetworkFunction?;
+    --GetState: (self: Network, name: string) -> NetworkState?;
 
     GetSignalWithRemote: (self: Network, remote: RemoteEvent) -> NetworkSignal?;
-    GetFunctionWithRemote: (self: Network, remote: RemoteFunction) -> NetworkFunction?;
+    --GetFunctionWithRemote: (self: Network, remote: RemoteFunction) -> NetworkFunction?;
 
     Destroy: (self: Network) -> ();
 }
@@ -74,7 +74,7 @@ local Network: Network = {}
 Network.__index = Network
 
 local function checkNamespace(network: Network, objectType: string, name: string)
-    assert(RESERVED_NAMESPACES[objectType][name] == nil, RESERVED_NAMESPACE_ERROR, objectType, name)
+    assert(network.__registry[objectType][name] == nil or RESERVED_NAMESPACES[objectType][name] == nil, RESERVED_NAMESPACE_ERROR, objectType, name)
     assert(network.__registry[objectType][name] == nil, ALREADY_EXISTS_ERROR, objectType, name)
 end
 
@@ -93,7 +93,6 @@ end
 local function createNetworkVault(name: string, parent: Instance): NetworkVault
     local vault = Instance.new("Folder")
     vault.Name = name
-    vault.Parent = parent
 
     local signalVault = Instance.new("Folder")
     signalVault.Name = "Signals"
@@ -103,15 +102,28 @@ local function createNetworkVault(name: string, parent: Instance): NetworkVault
     functionVault.Name = "Functions"
     functionVault.Parent = vault
 
+    vault.Parent = parent
     return vault
+end
+
+local function registerSignal(self: Network, name: string, remote: RemoteEvent)
+    local networkSignal = NetworkSignal.new(name, remote)
+    self.__registry.Signal[name] = networkSignal
+    self.SignalAdded:Fire(networkSignal)
+    return networkSignal
 end
 
 -- CREATORS --
 
 function Network:CreateSignal(name: string): NetworkSignal
     checkNamespace(self, "Signal", name)
+    local remote = Instance.new("RemoteEvent")
+    remote.Name = name
+    remote.Parent = self.__vault.Signals
+    return registerSignal(self, name, remote)
 end
 
+--[[
 function Network:CreateFunction(name: string): NetworkFunction
     checkNamespace(self, "Function", name)
 end
@@ -119,6 +131,7 @@ end
 function Network:CreateState(name: string): NetworkState
     checkNamespace(self, "State", name)
 end
+]]
 
 -- GETTERS --
 
@@ -134,6 +147,7 @@ function Network:GetSignalWithRemote(remote: RemoteEvent): NetworkSignal?
     end
 end
 
+--[[
 function Network:GetFunction(name: string): NetworkFunction?
     return self.__registry.Signal[name]
 end
@@ -144,12 +158,13 @@ end
 function Network:GetState(name: string): NetworkState?
     return self.__registry.Signal[name]
 end
+]]
 
 function Network:Destroy()
     self.__vault:Destroy()
 end
 
-function Network.new(name: string, parent: Instance)
+function Network.new(name: string, parent: Instance?): Network
     parent = parent or DefaultNetworkParent
     assert(parent:FindFirstChild(name) == nil, ALREADY_EXISTS_ERROR, "", name)
     local self = setmetatable({
@@ -169,8 +184,6 @@ function Network.new(name: string, parent: Instance)
 
     createReservedObjects(self)
     self.__vault.Destroying:Once(function()
-        self.NetworkSignalAdded:Destroy()
-        self.NetworkFunctionAdded:Destroy()
         setmetatable(self, nil)
         table.clear(self)
     end)
@@ -178,4 +191,6 @@ function Network.new(name: string, parent: Instance)
     return self
 end
 
-return Network
+return Network :: {
+    new: (name: string, parent: Instance?) -> Network;
+}
