@@ -40,7 +40,7 @@ export type Network = {
     Name: string;
 
     SignalAdded: FastSignal;
-    --FunctionAdded: FastSignal;
+    FunctionAdded: FastSignal;
     --StateAdded: FastSignal;
 
     __vault: NetworkVault;
@@ -51,15 +51,15 @@ export type Network = {
     };
 
     CreateSignal: (self: Network, name: string) -> NetworkSignal;
-    --CreateFunction: (self: Network, name: string) -> NetworkFunction;
+    CreateFunction: (self: Network, name: string) -> NetworkFunction;
     --CreateState: (self: Network, name: string, initialState: {any}) -> NetworkState;
 
     GetSignal: (self: Network, name: string) -> NetworkSignal?;
-    --GetFunction: (self: Network, name: string) -> NetworkFunction?;
+    GetFunction: (self: Network, name: string) -> NetworkFunction?;
     --GetState: (self: Network, name: string) -> NetworkState?;
 
     GetSignalWithRemote: (self: Network, remote: RemoteEvent) -> NetworkSignal?;
-    --GetFunctionWithRemote: (self: Network, remote: RemoteFunction) -> NetworkFunction?;
+    GetFunctionWithRemote: (self: Network, remote: RemoteFunction) -> NetworkFunction?;
 
     Destroy: (self: Network) -> ();
 }
@@ -113,6 +113,13 @@ local function registerSignal(self: Network, name: string, remote: RemoteEvent)
     return networkSignal
 end
 
+local function registerFunction(self: Network, name: string, remote: RemoteFunction)
+    local networkFunction = NetworkFunction.new(name, remote)
+    self.__registry.Function[name] = networkFunction
+    self.FunctionAdded:Fire(networkFunction)
+    return networkFunction
+end
+
 -- CREATORS --
 
 function Network:CreateSignal(name: string): NetworkSignal
@@ -123,11 +130,15 @@ function Network:CreateSignal(name: string): NetworkSignal
     return registerSignal(self, name, remote)
 end
 
---[[
 function Network:CreateFunction(name: string): NetworkFunction
     checkNamespace(self, "Function", name)
+    local remote = Instance.new("RemoteFunction")
+    remote.Name = name
+    remote.Parent = self.__vault.Functions
+    return registerFunction(self, name, remote)
 end
 
+--[[
 function Network:CreateState(name: string): NetworkState
     checkNamespace(self, "State", name)
 end
@@ -147,16 +158,21 @@ function Network:GetSignalWithRemote(remote: RemoteEvent): NetworkSignal?
     end
 end
 
---[[
 function Network:GetFunction(name: string): NetworkFunction?
-    return self.__registry.Signal[name]
+    return self.__registry.Function[name]
 end
 
 function Network:GetFunctionWithRemote(remote: RemoteFunction): NetworkFunction?
+    for namespace, func in pairs(self.__registry.Function) do
+        if func.__remote == remote then
+            return func
+        end
+    end
 end
 
+--[[
 function Network:GetState(name: string): NetworkState?
-    return self.__registry.Signal[name]
+    return self.__registry.State[name]
 end
 ]]
 

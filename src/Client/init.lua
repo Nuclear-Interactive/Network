@@ -35,7 +35,7 @@ export type Network = {
     Name: string;
 
     SignalAdded: FastSignal;
-    --FunctionAdded: FastSignal;
+    FunctionAdded: FastSignal;
     --StateAdded: FastSignal;
 
     __vault: NetworkVault;
@@ -46,11 +46,11 @@ export type Network = {
     };
 
     GetSignal: (self: Network, name: string) -> NetworkSignal?;
-    --GetFunction: (self: Network, name: string) -> NetworkFunction?;
+    GetFunction: (self: Network, name: string) -> NetworkFunction?;
     --GetState: (self: Network, name: string) -> NetworkState?;
 
     GetSignalWithRemote: (self: Network, remote: RemoteEvent) -> NetworkSignal?;
-    --GetFunctionWithRemote: (self: Network, remote: RemoteFunction) -> NetworkFunction?;
+    GetFunctionWithRemote: (self: Network, remote: RemoteFunction) -> NetworkFunction?;
 
     Destroy: (self: Network) -> ();
 }
@@ -67,6 +67,13 @@ local function registerSignal(self: Network, name: string, remote: RemoteEvent)
     return networkSignal
 end
 
+local function registerFunction(self: Network, name: string, remote: RemoteFunction)
+    local networkFunction = NetworkFunction.new(name, remote)
+    self.__registry.Function[name] = networkFunction
+    self.FunctionAdded:Fire(networkFunction)
+    return networkFunction
+end
+
 -- GETTERS --
 
 function Network:GetSignal(name: string): NetworkSignal?
@@ -81,14 +88,19 @@ function Network:GetSignalWithRemote(remote: RemoteEvent): NetworkSignal?
     end
 end
 
---[[
 function Network:GetFunction(name: string): NetworkFunction?
-    return self.__registry.Signal[name]
+    return self.__registry.Function[name]
 end
 
 function Network:GetFunctionWithRemote(remote: RemoteFunction): NetworkFunction?
+    for namespace, func in pairs(self.__registry.Function) do
+        if func.__remote == remote then
+            return func
+        end
+    end
 end
 
+--[[
 function Network:GetState(name: string): NetworkState?
     return self.__registry.Signal[name]
 end
@@ -123,6 +135,10 @@ function Network.new(name: string, parent: Instance?): Network
 
     applyToChildren(self.__vault.Signals, function(remote: RemoteEvent)
         registerSignal(self, remote.Name, remote)
+    end)
+
+    applyToChildren(self.__vault.Functions, function(remote: RemoteFunction)
+        registerFunction(self, remote.Name, remote)
     end)
 
     return self

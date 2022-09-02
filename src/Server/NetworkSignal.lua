@@ -25,16 +25,20 @@ export type NetworkSignal = {
     Wait: (self: NetworkSignal) -> ...any;
 
 	FireClient: (self: NetworkSignal, client: Player, any...) -> ();
-	--FireClients: (self: NetworkSignal, clients: {Player}, any...) -> ();
+	FireClients: (self: NetworkSignal, clients: {Player}, any...) -> ();
 	FireAllClients: (self: NetworkSignal, any...) -> ();
-	--FireAllExcept: (self: NetworkSignal, excludedClients: {Player}, any...) -> ();
-	--FireAllFilter: <A>(self: NetworkSignal, predicate: (client: Player, A...) -> (boolean), A...) -> ();
+	FireAllExcept: (self: NetworkSignal, excludedClients: {Player}, any...) -> ();
+	FireAllFilter: <A...>(self: NetworkSignal, predicate: (client: Player, A...) -> (boolean), A...) -> ();
 
     Destroy: (self: NetworkSignal) -> ();
 }
 
 local NetworkSignal: NetworkSignal = {}
 NetworkSignal.__index = NetworkSignal
+
+local function fireClient(self: NetworkSignal, client: Player, ...: any)
+    self.__remote:FireClient(client, ...)
+end
 
 function NetworkSignal:Connect(handler: (...any) -> (), direct: boolean?): FastConnection
     local signalToConnectTo = direct and self.__remote.OnServerEvent or self.__signal
@@ -52,11 +56,35 @@ function NetworkSignal:Wait(direct: boolean?): ...any
 end
 
 function NetworkSignal:FireClient(client: Player, ...: any)
-    self.__remote:FireClient(client, ...)
+    fireClient(self, client, ...)
+end
+
+function NetworkSignal:FireClients(clients: {Player}, ...: any)
+    for _, client in pairs(clients) do
+        fireClient(self, client, ...)
+    end
 end
 
 function NetworkSignal:FireAllClients(...: any)
-    self.__remote:FireAllClients(...)
+    for _, client in pairs(Players:GetPlayers()) do
+        fireClient(self, client, ...)
+    end
+end
+
+function NetworkSignal:FireAllExcept(excludedClients: {Player}, ...: any)
+    for _, client in pairs(Players:GetPlayers()) do
+        if not table.find(excludedClients, client) then
+            fireClient(self, client, ...)
+        end
+    end
+end
+
+function NetworkSignal:FireAllFilter(predicate, ...: any)
+    for _, client in pairs(Players:GetPlayers()) do
+        if predicate(client) then 
+            fireClient(self, client, ...) 
+        end
+    end
 end
 
 function NetworkSignal:Destroy()
