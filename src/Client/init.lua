@@ -21,10 +21,8 @@ type BasicState = typeof(BasicState.new())
 
 local NetworkSignal = require(script.NetworkSignal)
 local NetworkFunction = require(script.NetworkFunction)
-local NetworkState = require(script.NetworkState)
 export type NetworkSignal = NetworkSignal.NetworkSignal
 export type NetworkFunction = NetworkFunction.NetworkFunction
-export type NetworkState = NetworkState.NetworkState
 
 type NetworkVault = Folder & {
     Signals: Folder;
@@ -42,12 +40,10 @@ export type Network = {
     __registry: {
         Signal: {NetworkSignal};
         Function: {NetworkFunction};
-        State: {NetworkState};
     };
 
     GetSignal: (self: Network, name: string) -> NetworkSignal?;
     GetFunction: (self: Network, name: string) -> NetworkFunction?;
-    --GetState: (self: Network, name: string) -> NetworkState?;
 
     GetSignalWithRemote: (self: Network, remote: RemoteEvent) -> NetworkSignal?;
     GetFunctionWithRemote: (self: Network, remote: RemoteFunction) -> NetworkFunction?;
@@ -100,12 +96,6 @@ function Network:GetFunctionWithRemote(remote: RemoteFunction): NetworkFunction?
     end
 end
 
---[[
-function Network:GetState(name: string): NetworkState?
-    return self.__registry.Signal[name]
-end
-]]
-
 function Network:Destroy()
     self.__vault:Destroy()
 end
@@ -118,13 +108,11 @@ function Network.new(name: string, parent: Instance?): Network
 
         SignalAdded = FastSignal.new();
         FunctionAdded = FastSignal.new();
-        StateAdded = FastSignal.new();
 
         __vault = parent:FindFirstChild(name);
         __registry = {
             Signal = {};
             Function = {};
-            State = {};
         };
     }, Network)
 

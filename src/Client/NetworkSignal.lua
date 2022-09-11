@@ -16,6 +16,10 @@ type Promise = typeof(Promise.new())
 
 export type NetworkSignal = {
     Name: string;
+    Middleware: {
+        Inbound: {};
+        Outbound: {};
+    };
 
     __remote: RemoteEvent;
     __signal: FastSignal;

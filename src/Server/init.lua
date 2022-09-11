@@ -6,7 +6,6 @@ local RESERVED_NAMESPACE_ERROR = "Network%s: %s is a reserved namespace for inte
 local RESERVED_NAMESPACES = {
     Signal = {StateAdded = {}};
     Function = {};
-    State = {};
 };
 
 local Util = script.Parent.Util
@@ -26,10 +25,8 @@ type BasicState = typeof(BasicState.new())
 
 local NetworkSignal = require(script.NetworkSignal)
 local NetworkFunction = require(script.NetworkFunction)
-local NetworkState = require(script.NetworkState)
 export type NetworkSignal = NetworkSignal.NetworkSignal
 export type NetworkFunction = NetworkFunction.NetworkFunction
-export type NetworkState = NetworkState.NetworkState
 
 type NetworkVault = Folder & {
     Signals: Folder;
@@ -47,16 +44,13 @@ export type Network = {
     __registry: {
         Signal: {NetworkSignal};
         Function: {NetworkFunction};
-        State: {NetworkState};
     };
 
     CreateSignal: (self: Network, name: string) -> NetworkSignal;
     CreateFunction: (self: Network, name: string) -> NetworkFunction;
-    --CreateState: (self: Network, name: string, initialState: {any}) -> NetworkState;
 
     GetSignal: (self: Network, name: string) -> NetworkSignal?;
     GetFunction: (self: Network, name: string) -> NetworkFunction?;
-    --GetState: (self: Network, name: string) -> NetworkState?;
 
     GetSignalWithRemote: (self: Network, remote: RemoteEvent) -> NetworkSignal?;
     GetFunctionWithRemote: (self: Network, remote: RemoteFunction) -> NetworkFunction?;
@@ -84,9 +78,6 @@ local function createReservedObjects(network: Network)
     end
     for namespace, args in pairs(RESERVED_NAMESPACES.Function) do
         network:CreateFunction(namespace)
-    end
-    for namespace, args in pairs(RESERVED_NAMESPACES.State) do
-        network:CreateState(namespace, unpack(args))
     end
 end
 
@@ -138,12 +129,6 @@ function Network:CreateFunction(name: string): NetworkFunction
     return registerFunction(self, name, remote)
 end
 
---[[
-function Network:CreateState(name: string): NetworkState
-    checkNamespace(self, "State", name)
-end
-]]
-
 -- GETTERS --
 
 function Network:GetSignal(name: string): NetworkSignal?
@@ -170,12 +155,6 @@ function Network:GetFunctionWithRemote(remote: RemoteFunction): NetworkFunction?
     end
 end
 
---[[
-function Network:GetState(name: string): NetworkState?
-    return self.__registry.State[name]
-end
-]]
-
 function Network:Destroy()
     self.__vault:Destroy()
 end
@@ -188,13 +167,11 @@ function Network.new(name: string, parent: Instance?): Network
 
         SignalAdded = FastSignal.new();
         FunctionAdded = FastSignal.new();
-        StateAdded = FastSignal.new();
 
         __vault = createNetworkVault(name, parent);
         __registry = {
             Signal = {};
             Function = {};
-            State = {};
         };
     }, Network)
 
