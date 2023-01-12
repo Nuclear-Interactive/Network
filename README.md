@@ -1,4 +1,5 @@
 # Network
+  - [Changelog](CHANGELOG.md)
   - [Features](#features)
   - [Installation](#installation)
   - [Example Usage](#example-usage)
@@ -10,16 +11,29 @@ A Roblox networking library with a goal of making networking easier on VS Code w
 ## Features
 - Similar API to default Roblox Remotes
 - Middlewares for Serialization and Deserialization operations
-- Promise alternative to yielding methods eg. `:Wait()` to `:WaitPromise()`
+- Promise alternative to yielding methods eg. `:Wait()` to `:WaitPromise()` (Not yet implemented)
 
 ## Installation
 ### Via Wally
 ```toml
-Network = "synthranger/network@1.0.3"
+Network = "synthranger/network@1.2.0"
 ```
 
 ## Example Usage
 Network has a familiar API similar to the default Roblox Remotes so users will have the least amount of issues transitioning to this library.
+
+#### Importing
+Keep in mind the client and the server has completely different modules so you have to specify it while requiring each module.
+
+*Assuming Packages variable is already defined*
+```lua
+-- SERVER
+local Network = require(Packages.Network.Server)
+```
+```lua
+-- CLIENT
+local Network = require(Packages.Network.Client)
+```
 
 #### Class Creation
 The Server is the only one who is authorized to create classes, the Client's job is only to have a copy of the Server's classes on their end.
@@ -92,16 +106,30 @@ Function:SetCallback(function()
 end)
 ```
 
+#### Middlewares
+Since middlewares use promises, Network has a helper function to get the Promise library so you don't have to import it yourself.
+```lua
+local Network = require(Packages.Network.Server)
+local Promise = Network.getPromise()
+```
+
 #### NetworkSignal Middlewares
 Example of serialization and deserialization using middlewares with NetworkSignals.
 ```lua
 -- SERVER
+local function serialize(args)
+    -- some serialization algorithm
+    return serializedArgs
+end
+
 Signal.OutboundMiddleware[1] = function(player, args)
     return Promise.new(function(resolve, reject)
         if player == somePlayer then
-            -- Set first argument to true to continue transforming args with next middleware
-            -- Second argument is the args
-            resolve(true, {serialize(args)})
+            -- resolve(shouldContinue: boolean, args: {any})
+            resolve(
+                true, -- Set first argument to true to continue transforming args with next middleware
+                {serialize(args)} -- The args, serialize(args) is now the first argument
+            )
         else
             -- Reject to drop, will not fire connections
             reject()
@@ -110,10 +138,18 @@ Signal.OutboundMiddleware[1] = function(player, args)
 end
 ```
 ```lua
+local function deserialize(args)
+    -- some deserialization algorithm
+    return deserializedArgs
+end
+
 -- CLIENT
 Signal.InboundMiddleware[1] = function(args)
     return Promise.new(function(resolve, reject)
-        resolve(true, {deserialize(unpack(args))})
+        resolve(
+            true, 
+            {deserialize(args[1])} -- since the serialized data is the 1st argument, we index it and deserialize it
+        )
     end)
 end
 ```
@@ -126,7 +162,7 @@ Function.OutboundMiddleware[1] = function(player, args)
     -- reject will cause return arguments to be nil 
     -- so it doesn't get used as much in here
     return Promise.new(function(resolve)
-        resolve(true, {serialize(args)})
+        resolve(true, {"I replaced an argument", "I replaced another argument"})
     end)
 end
 ```
@@ -134,7 +170,7 @@ end
 -- CLIENT
 Function.InboundMiddleware[1] = function(args)
     return Promise.new(function(resolve)
-        resolve(true, {deserialize(unpack(args))})
+        resolve(true, {"This replaced the first argument", "Another replacement argument"})
     end)
 end
 ```
