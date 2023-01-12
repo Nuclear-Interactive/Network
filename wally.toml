@@ -1,6 +1,6 @@
 [package]
 name = "synthranger/network"
-version = "1.0.3"
+version = "1.2.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 
@@ -10,3 +10,4 @@ include = ["src", "src/*", "default.project.json", "wally.toml"]
 [dependencies]
 Promise = "ruizukun-dev/promise@4.0.3"
 FastSignal = "lucasmzreal/fastsignal@10.2.1"
+Janitor = "howmanysmall/janitor@1.14.1"

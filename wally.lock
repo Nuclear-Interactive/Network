@@ -3,6 +3,11 @@
 registry = "test"
 
 [[package]]
+name = "howmanysmall/janitor"
+version = "1.14.1"
+dependencies = []
+
+[[package]]
 name = "lucasmzreal/fastsignal"
 version = "10.2.1"
 dependencies = []
@@ -14,5 +19,5 @@ dependencies = []
 
 [[package]]
 name = "synthranger/network"
-version = "1.0.3"
-dependencies = [["FastSignal", "lucasmzreal/fastsignal@10.2.1"], ["Promise", "ruizukun-dev/promise@4.0.3"]]
+version = "1.2.0"
+dependencies = [["FastSignal", "lucasmzreal/fastsignal@10.2.1"], ["Janitor", "howmanysmall/janitor@1.14.1"], ["Promise", "ruizukun-dev/promise@4.0.3"]]
