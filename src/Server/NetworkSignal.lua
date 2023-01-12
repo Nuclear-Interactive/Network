@@ -17,8 +17,8 @@ type Promise = typeof(Promise.new())
 export type NetworkSignal = {
     Name: string;
     Middleware: {
-        Inbound: {};
-        Outbound: {};
+        Inbound: {(player: Player, args: {any}) -> Promise};
+        Outbound: {(player: Player, args: {any}) -> Promise};
     };
 
     __remote: RemoteEvent;
@@ -40,8 +40,32 @@ export type NetworkSignal = {
 local NetworkSignal: NetworkSignal = {}
 NetworkSignal.__index = NetworkSignal
 
+local function applyMiddleware(middleware, player, ...)
+	local args = {...}
+	return Promise.new(function(resolve, reject)
+		if #middleware > 0 then
+			local shouldContinue = true
+			for _, middlewareFn in pairs(middleware) do
+				local success = false
+				success, shouldContinue, args = middlewareFn(player, args):await()
+				if not success then
+					reject(args)
+				end
+				if not shouldContinue then
+					break
+				end
+			end
+			resolve(args)
+		else
+			resolve(args)
+		end
+	end)
+end
+
 local function fireClient(self: NetworkSignal, client: Player, ...: any)
-    self.__remote:FireClient(client, ...)
+    applyMiddleware(self.Middleware.Outbound, client, ...):andThen(function(args)
+        self.__remote:FireClient(client, unpack(args))
+    end)
 end
 
 function NetworkSignal:Connect(handler: (...any) -> (), direct: boolean?): FastConnection
@@ -98,6 +122,10 @@ end
 function NetworkSignal.new(name: string, remote: RemoteEvent): NetworkSignal
     local self = setmetatable({
         Name = name;
+        Middleware = {
+            Inbound = {};
+            Outbound = {};
+        };
 
         __remote = remote;
         __signal = FastSignal.new();
@@ -105,7 +133,9 @@ function NetworkSignal.new(name: string, remote: RemoteEvent): NetworkSignal
 
     onSignalFirstConnected(self.__signal, function()
         self.__remote.OnServerEvent:Connect(function(player, ...)
-            self.__signal:Fire(player, ...)
+            applyMiddleware(self.Middleware.Inbound, player, ...):andThen(function(args)
+                self.__signal:Fire(player, unpack(args))
+            end)
         end)
     end)
 

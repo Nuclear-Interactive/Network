@@ -16,6 +16,10 @@ type Callback = (any...) -> (...any)
 export type NetworkFunction = {
 	Name: string;
     CallbackSet: FastSignal;
+    Middleware: {
+        Inbound: {(args: {any}) -> Promise};
+        Outbound: {(args: {any}) -> Promise};
+    };
 
 	__remote: RemoteFunction;
 	__function: Callback;
@@ -29,8 +33,53 @@ export type NetworkFunction = {
 local NetworkFunction: NetworkFunction = {}
 NetworkFunction.__index = NetworkFunction
 
-function NetworkFunction.__onClientInvoke()
-    
+local function applyMiddleware(middleware, ...)
+    local args = {...}
+	return Promise.new(function(resolve, reject)
+		if #middleware > 0 then
+			local shouldContinue = true
+			for _, middlewareFn in pairs(middleware) do
+				local success = false
+				success, shouldContinue, args = middlewareFn(args):await()
+				if not success then
+					reject(args)
+				end
+				if not shouldContinue then
+					break
+				end
+			end
+			resolve(args)
+		else
+			resolve(args)
+		end
+	end)
+end
+
+local function invokeServer(self: NetworkFunction, ...)
+    local args = {...}
+    return Promise.new(function(resolve, reject)
+        if #self.Middleware.Inbound > 0 or #self.Middleware.Outbound > 0 then
+            local outSuccess, outArgs = applyMiddleware(self.Middleware.Outbound, unpack(args)):await()
+            if not outSuccess then reject(outArgs) return end
+            local inSuccess, inArgs = applyMiddleware(self.Middleware.Inbound, self.__remote:InvokeServer(unpack(outArgs))):await()
+            if not inSuccess then reject(inArgs) return end
+            resolve(unpack(inArgs))
+        else
+            resolve(self.__remote:InvokeServer(unpack(args)))
+        end
+    end)
+end
+
+local function onClientInvoke(self: NetworkFunction, ...)
+    if #self.Middleware.Inbound > 0 or #self.Middleware.Outbound > 0 then
+        local inSuccess, inArgs = applyMiddleware(self.Middleware.Inbound, ...):await()
+        if not inSuccess then return end
+        local outSuccess, outArgs = applyMiddleware(self.Middleware.Outbound, self.__function(unpack(inArgs))):await()
+        if not outSuccess then return end
+        return unpack(outArgs)
+    else
+        return self.__function(...)
+    end
 end
 
 function NetworkFunction.__function(player: Player)
@@ -43,7 +92,8 @@ function NetworkFunction:SetCallback(callback: Callback)
 end
 
 function NetworkFunction:InvokeServer(...: any)
-    return self.__remote:InvokeServer(...)
+    local result = {invokeServer(self, ...):await()}
+    return unpack(result, 2, #result)
 end
 
 function NetworkFunction:Destroy()
@@ -54,6 +104,10 @@ function NetworkFunction.new(name: string, remote: RemoteFunction): NetworkFunct
     local self = setmetatable({
         Name = name;
         CallbackSet = FastSignal.new();
+        Middleware = {
+            Inbound = {};
+            Outbound = {};
+        };
 
         __remote = remote;
     }, NetworkFunction)
@@ -65,8 +119,8 @@ function NetworkFunction.new(name: string, remote: RemoteFunction): NetworkFunct
     end)
 
     self.CallbackSet:Once(function()
-        self.__remote.OnClientInvoke = function(player: Player, ...)
-            return self.__function(player, ...)
+        self.__remote.OnClientInvoke = function(...)
+            return onClientInvoke(self, ...)
         end
     end)
 

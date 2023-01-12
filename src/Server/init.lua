@@ -20,9 +20,6 @@ type FastConnection = FastSignal.ScriptConnection
 local Promise = require(Packages.Promise)
 type Promise = typeof(Promise.new())
 
-local BasicState = require(Packages.BasicState)
-type BasicState = typeof(BasicState.new())
-
 local NetworkSignal = require(script.NetworkSignal)
 local NetworkFunction = require(script.NetworkFunction)
 export type NetworkSignal = NetworkSignal.NetworkSignal
@@ -159,6 +156,10 @@ function Network:Destroy()
     self.__vault:Destroy()
 end
 
+function Network.getPromise()
+    return Promise
+end
+
 function Network.new(name: string, parent: Instance?): Network
     parent = parent or DefaultNetworkParent
     assert(parent:FindFirstChild(name) == nil, ALREADY_EXISTS_ERROR, "", name)
@@ -186,4 +187,5 @@ end
 
 return Network :: {
     new: (name: string, parent: Instance?) -> Network;
+    getPromise: () -> typeof(Promise);
 }

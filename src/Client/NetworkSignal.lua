@@ -17,8 +17,8 @@ type Promise = typeof(Promise.new())
 export type NetworkSignal = {
     Name: string;
     Middleware: {
-        Inbound: {};
-        Outbound: {};
+        Inbound: {(args: {any}) -> Promise};
+        Outbound: {(args: {any}) -> Promise};
     };
 
     __remote: RemoteEvent;
@@ -36,6 +36,28 @@ export type NetworkSignal = {
 local NetworkSignal: NetworkSignal = {}
 NetworkSignal.__index = NetworkSignal
 
+local function applyMiddleware(middleware, ...)
+	local args = {...}
+	return Promise.new(function(resolve, reject)
+		if #middleware > 0 then
+			local shouldContinue = true
+			for _, middlewareFn in pairs(middleware) do
+				local success = false
+				success, shouldContinue, args = middlewareFn(args):await()
+				if not success then
+					reject(args)
+				end
+				if not shouldContinue then
+					break
+				end
+			end
+			resolve(args)
+		else
+			resolve(args)
+		end
+	end)
+end
+
 function NetworkSignal:Connect(handler: (...any) -> (), direct: boolean?): FastConnection
     local signalToConnectTo = direct and self.__remote.OnClientEvent or self.__signal
     return signalToConnectTo:Connect(handler)
@@ -52,7 +74,9 @@ function NetworkSignal:Wait(direct: boolean?): ...any
 end
 
 function NetworkSignal:FireServer(...: any)
-    self.__remote:FireServer(...)
+    applyMiddleware(self.Middleware.Outbound, ...):andThen(function(args)
+        self.__remote:FireServer(unpack(args))
+    end)
 end
 
 function NetworkSignal:Destroy()
@@ -62,6 +86,10 @@ end
 function NetworkSignal.new(name: string, remote: RemoteEvent): NetworkSignal
     local self = setmetatable({
         Name = name;
+        Middleware = {
+            Inbound = {};
+            Outbound = {};
+        };
 
         __remote = remote;
         __signal = FastSignal.new();
@@ -69,7 +97,9 @@ function NetworkSignal.new(name: string, remote: RemoteEvent): NetworkSignal
 
     onSignalFirstConnected(self.__signal, function()
         self.__remote.OnClientEvent:Connect(function(...)
-            self.__signal:Fire(...)
+            applyMiddleware(self.Middleware.Inbound, ...):andThen(function(args)
+                self.__signal:Fire(unpack(args))
+            end)
         end)
     end)
 

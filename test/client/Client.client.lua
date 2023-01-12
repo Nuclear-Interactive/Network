@@ -1,16 +1,17 @@
 local Packages = game.ReplicatedStorage.Packages
 local Network = require(Packages.Network.Client)
+local Promise = Network.getPromise()
 
 local Net = Network.new("Net")
 local Signal = Net:GetSignal("Signal")
 local Func = Net:GetFunction("Func")
 
 Signal:Connect(function(message: string)
-    print("Server :", message)
+    print("[NETWORKSIGNAL CLIENT] Server :", message)
 end)
 
 Func:SetCallback(function()
-    return "HELLO TOO BRO!"
+    return "NETWORKFUNCTION CLIENT RESPONSE"
 end)
 
 Signal:FireServer("Hi")
