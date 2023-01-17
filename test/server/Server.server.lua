@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 
 local Packages = game.ReplicatedStorage.Packages
-local Network = require(Packages.Network.Server)
+local Network = require(Packages.Network):GetServer()
 local Promise = Network.getPromise()
 
 local Net = Network.new("Net")

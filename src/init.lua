@@ -1,6 +1,11 @@
-warn("It is recommended to require the modules inside this container directly instead of getting them through this container module")
+local Handler = {}
 
-return {
-    Server = require(script.Server);
-    Client = require(script.Client);
-}
+function Handler:GetServer()
+    return require(script.Server)
+end
+
+function Handler:GetClient()
+    return require(script.Client)
+end
+
+return Handler

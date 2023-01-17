@@ -1,5 +1,5 @@
 local Packages = game.ReplicatedStorage.Packages
-local Network = require(Packages.Network.Client)
+local Network = require(Packages.Network):GetClient()
 local Promise = Network.getPromise()
 
 local Net = Network.new("Net")
