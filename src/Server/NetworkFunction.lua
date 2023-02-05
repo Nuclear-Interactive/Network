@@ -26,6 +26,7 @@ export type NetworkFunction = {
 
     SetCallback: (self: NetworkFunction, callback: Callback) -> ();
     InvokeClient: (self: NetworkFunction, client: Player, any...) -> (...any);
+    InvokeClientPromise: (self: NetworkFunction, client: Player, any...) -> Promise;
 
 	Destroy: (self: NetworkFunction) -> ();
 }
@@ -94,6 +95,10 @@ end
 function NetworkFunction:InvokeClient(client: Player, ...: any)
     local result = {invokeClient(self, client, ...):await()}
     return unpack(result, 2, #result)
+end
+
+function NetworkFunction:InvokeClientPromise(client: Player, ...: any)
+    return invokeClient(self, client, ...)
 end
 
 function NetworkFunction:Destroy()

@@ -11,12 +11,12 @@ A Roblox networking library with a goal of making networking easier on VS Code w
 ## Features
 - Similar API to default Roblox Remotes
 - Middlewares for Serialization and Deserialization operations
-- Promise alternative to yielding methods eg. `:Wait()` to `:WaitPromise()` (Not yet implemented)
+- Promise alternative to yielding methods eg. `:Wait()` to `:WaitPromise()`
 
 ## Installation
 ### Via Wally
 ```toml
-Network = "synthranger/network@1.2.0"
+Network = "synthranger/network@1.2.2"
 ```
 
 ## Example Usage
@@ -28,11 +28,11 @@ Keep in mind the client and the server has completely different modules so you h
 *Assuming Packages variable is already defined*
 ```lua
 -- SERVER
-local Network = require(Packages.Network.Server)
+local Network = require(Packages.Network):GetServer()
 ```
 ```lua
 -- CLIENT
-local Network = require(Packages.Network.Client)
+local Network = require(Packages.Network):GetClient()
 ```
 
 #### Class Creation
@@ -109,7 +109,7 @@ end)
 #### Middlewares
 Since middlewares use promises, Network has a helper function to get the Promise library so you don't have to import it yourself.
 ```lua
-local Network = require(Packages.Network.Server)
+local Network = require(Packages.Network):GetServer()
 local Promise = Network.getPromise()
 ```
 

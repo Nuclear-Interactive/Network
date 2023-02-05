@@ -27,6 +27,7 @@ export type NetworkSignal = {
     Connect: (self: NetworkSignal, handler: (...any) -> ()) -> FastConnection;
     Once: (self: NetworkSignal, handler: (...any) -> ()) -> ();
     Wait: (self: NetworkSignal) -> ...any;
+    WaitPromise: (self: NetworkSignal) -> Promise;
 
     FireServer: (self: NetworkSignal, ...any) -> ();
 
@@ -71,6 +72,12 @@ end
 function NetworkSignal:Wait(direct: boolean?): ...any
     local signalToConnectTo = direct and self.__remote.OnClientEvent or self.__signal
     return signalToConnectTo:Wait()
+end
+
+function NetworkSignal:WaitPromise(direct: boolean?)
+    return Promise.new(function(resolve)
+        resolve(self:Wait(direct))
+    end)
 end
 
 function NetworkSignal:FireServer(...: any)

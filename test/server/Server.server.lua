@@ -18,5 +18,7 @@ end)
 
 Players.PlayerAdded:Connect(function(player)
     Signal:FireClient(player, "Hello")
-    print(Func:InvokeClient(player))
+    Func:InvokeClientPromise(player):andThen(function(...)
+        print(...)
+    end)
 end)
