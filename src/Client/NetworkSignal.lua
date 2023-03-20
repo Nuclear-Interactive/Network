@@ -65,8 +65,15 @@ function NetworkSignal:Connect(handler: (...any) -> (), direct: boolean?): FastC
 end
 
 function NetworkSignal:Once(handler: (...any) -> (), direct: boolean?)
-    local signalToConnectTo = direct and self.__remote.OnClientEvent or self.__signal
-    return signalToConnectTo:Once(handler)
+    self.__remote.OnClientEvent:Once(function(...)
+        if direct then
+            handler(...)
+        else
+            applyMiddleware(self.Middleware.Inbound, ...):andThen(function(args)
+                handler(unpack(args))
+            end)
+        end
+    end)
 end
 
 function NetworkSignal:Wait(direct: boolean?): ...any

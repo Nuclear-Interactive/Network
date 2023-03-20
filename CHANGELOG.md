@@ -17,7 +17,11 @@
 - Structural fixes
   
 ## [1.2.1]
-- Container module changed from .Server to :GetServer() likewise, .Client to :GetClient for getting the module for the server and client.
+- Container module changed from `.Server` to `:GetServer()` likewise, `.Client` to `:GetClient()` for getting the module for the server and client.
 
 ## [1.2.2]
 - Promise alternatives for yielding methods implemented
+
+## [1.2.3]
+- Fixed invocation queue behavior bugs with `:Once(...)`
+- Type fixes

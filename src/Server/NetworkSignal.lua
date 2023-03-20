@@ -29,11 +29,11 @@ export type NetworkSignal = {
     Wait: (self: NetworkSignal) -> ...any;
     WaitPromise: (self: NetworkSignal) -> Promise;
 
-	FireClient: (self: NetworkSignal, client: Player, any...) -> ();
-	FireClients: (self: NetworkSignal, clients: {Player}, any...) -> ();
-	FireAllClients: (self: NetworkSignal, any...) -> ();
-	FireAllExcept: (self: NetworkSignal, excludedClients: {Player}, any...) -> ();
-	FireAllFilter: <A...>(self: NetworkSignal, predicate: (client: Player, A...) -> (boolean), A...) -> ();
+	FireClient: (self: NetworkSignal, client: Player, ...any) -> ();
+	FireClients: (self: NetworkSignal, clients: {Player}, ...any) -> ();
+	FireAllClients: (self: NetworkSignal, ...any) -> ();
+	FireAllExcept: (self: NetworkSignal, excludedClients: {Player}, ...any) -> ();
+	FireAllFilter: (self: NetworkSignal, predicate: (client: Player, ...any) -> (boolean), ...any) -> ();
 
     Destroy: (self: NetworkSignal) -> ();
 }
@@ -75,8 +75,15 @@ function NetworkSignal:Connect(handler: (...any) -> (), direct: boolean?): FastC
 end
 
 function NetworkSignal:Once(handler: (...any) -> (), direct: boolean?)
-    local signalToConnectTo = direct and self.__remote.OnServerEvent or self.__signal
-    return signalToConnectTo:Once(handler)
+    self.__remote.OnServerEvent:Once(function(player, ...)
+        if direct then
+            handler(player, ...)
+        else
+            applyMiddleware(self.Middleware.Inbound, player, ...):andThen(function(args)
+                handler(player, unpack(args))
+            end)
+        end
+    end)
 end
 
 function NetworkSignal:Wait(direct: boolean?): ...any

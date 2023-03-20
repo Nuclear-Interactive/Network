@@ -12,7 +12,7 @@ type FastConnection = FastSignal.ScriptConnection
 local Promise = require(Packages.Promise)
 type Promise = typeof(Promise.new())
 
-type Callback = (any...) -> (...any)
+type Callback = (...any) -> (...any)
 export type NetworkFunction = {
 	Name: string;
     CallbackSet: FastSignal;
@@ -25,8 +25,8 @@ export type NetworkFunction = {
 	__function: Callback;
 
     SetCallback: (self: NetworkFunction, callback: Callback) -> ();
-    InvokeServer: (self: NetworkFunction, any...) -> (...any);
-    InvokeServerPromise: (self: NetworkFunction, any...) -> Promise;
+    InvokeServer: (self: NetworkFunction, ...any) -> (...any);
+    InvokeServerPromise: (self: NetworkFunction, ...any) -> Promise;
 
 	Destroy: (self: NetworkFunction) -> ();
 }
