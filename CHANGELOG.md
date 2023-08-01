@@ -25,3 +25,7 @@
 ## [1.2.3]
 - Fixed invocation queue behavior bugs with `:Once(...)`
 - Type fixes
+
+## [1.2.4]
+- If the first argument in `Network.new()` is left nil it defaults to "Default"
+- Removed StateAdded in network reserved namespaces

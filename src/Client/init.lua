@@ -102,6 +102,7 @@ function Network.getPromise()
 end
 
 function Network.new(name: string, parent: Instance?): Network
+    name = name or "Default"
     parent = parent or DefaultNetworkParent
     assert(parent:FindFirstChild(name), DOES_NOT_EXIST_ERROR, parent:GetFullName(), name);
     local self = setmetatable({

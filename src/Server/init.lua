@@ -4,7 +4,7 @@ local RunService = game:GetService("RunService")
 local ALREADY_EXISTS_ERROR = "Network%s: %s already exists."
 local RESERVED_NAMESPACE_ERROR = "Network%s: %s is a reserved namespace for internal use."
 local RESERVED_NAMESPACES = {
-    Signal = {StateAdded = {}};
+    Signal = {};
     Function = {};
 };
 
@@ -161,6 +161,7 @@ function Network.getPromise()
 end
 
 function Network.new(name: string, parent: Instance?): Network
+    name = name or "Default"
     parent = parent or DefaultNetworkParent
     assert(parent:FindFirstChild(name) == nil, ALREADY_EXISTS_ERROR, "", name)
     local self = setmetatable({
